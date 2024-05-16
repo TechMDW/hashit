@@ -23,7 +23,7 @@ Hashit is a command-line tool that supports various hash functions for files and
 Use Go to install the package for you.
 
 ```sh
-go install github.com/TechMDW/hashit@latest
+go install github.com/TechMDW/hashit/cmd/hashit@latest
 ```
 
 ### Via github releases
