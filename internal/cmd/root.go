@@ -13,7 +13,6 @@ var rootCmd = &cobra.Command{
 	Example: "  hashit \"Hello, World!\" \n  hashit \"Hello, World!\" -t md5 \n  hashit -f /path/to/file\n  hashit -f /path/to/file -t sha256",
 	Short:   "Hash a file using multiple hash functions",
 	Long:    `Hash a file using Adler, MD4, MD5, SHA1, SHA2, SHA3, FNV and CRC hash functions.`,
-	Args:    cobra.MaximumNArgs(1),
 	Run:     hashRun,
 }
 
@@ -25,8 +24,8 @@ func hashRun(cmd *cobra.Command, args []string) {
 		isFile = true
 	}
 
-	if !isFile && len(args) == 0 {
-		cmd.PrintErr("argument or file flag is required")
+	if !isFile && len(args) <= 0 {
+		cmd.Help()
 		return
 	}
 
