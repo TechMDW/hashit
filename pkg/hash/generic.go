@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/md4"
 	"golang.org/x/crypto/sha3"
 )
@@ -133,6 +134,14 @@ func ComputeHash(data []byte, hashType string, file bool) (*GenericHash, error) 
 		hasher = crc64.New(crc64.MakeTable(crc64.ISO))
 	case "crc64_ecma":
 		hasher = crc64.New(crc64.MakeTable(crc64.ECMA))
+	case "blake2b256":
+		hasher, _ = blake2b.New256(nil)
+	case "blake2b384":
+		hasher, _ = blake2b.New384(nil)
+	case "blake2b512":
+		hasher, _ = blake2b.New512(nil)
+	case "blake2s256":
+		hasher, _ = blake2b.New256(nil)
 	default:
 		return &GenericHash{}, fmt.Errorf("unknown hash type: %s", hashType)
 	}
@@ -170,5 +179,9 @@ func ComputeHashList() []string {
 		"crc32_castagnoli",
 		"crc64_iso",
 		"crc64_ecma",
+		"blake2b256",
+		"blake2b384",
+		"blake2b512",
+		"blake2s256",
 	}
 }

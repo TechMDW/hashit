@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
+	"hash"
 	"hash/adler32"
 	"hash/crc32"
 	"hash/crc64"
@@ -13,6 +14,8 @@ import (
 	"io"
 	"os"
 
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/blake2s"
 	"golang.org/x/crypto/md4"
 	"golang.org/x/crypto/sha3"
 )
@@ -26,6 +29,7 @@ type Hashes struct {
 	SHA3    SHA3   `json:"sha3"`
 	FNV     FNV    `json:"fnv"`
 	CRC     CRC    `json:"crc"`
+	Blake   Blake  `json:"blake"`
 }
 
 type SHA2 struct {
@@ -59,13 +63,20 @@ type CRC struct {
 	CRC64ECMA       string `json:"crc64_ECMA"`
 }
 
+type Blake struct {
+	Blake2b256 string `json:"blake2b256"`
+	Blake2b384 string `json:"blake2b384"`
+	Blake2b512 string `json:"blake2b512"`
+	Blake2s256 string `json:"blake2s256"`
+}
+
 type HasherArray struct {
 	Type string `json:"type"`
 	Hash string `json:"hash"`
 }
 
 func (h Hashes) Array() []HasherArray {
-	hashes := []HasherArray{
+	return []HasherArray{
 		{Type: "adler32", Hash: h.Adler32},
 		{Type: "md4", Hash: h.MD4},
 		{Type: "md5", Hash: h.MD5},
@@ -78,8 +89,8 @@ func (h Hashes) Array() []HasherArray {
 		{Type: "sha512_256", Hash: h.SHA2.SHA512_256},
 		{Type: "sha3_256", Hash: h.SHA3.SHA256},
 		{Type: "sha3_512", Hash: h.SHA3.SHA512},
-		{Type: "sha3_shake128", Hash: h.SHA3.Shake128},
-		{Type: "sha3_shake256", Hash: h.SHA3.Shake256},
+		{Type: "shake128", Hash: h.SHA3.Shake128},
+		{Type: "shake256", Hash: h.SHA3.Shake256},
 		{Type: "fnv32", Hash: h.FNV.FNV32},
 		{Type: "fnv32a", Hash: h.FNV.FNV32a},
 		{Type: "fnv64", Hash: h.FNV.FNV64},
@@ -89,192 +100,98 @@ func (h Hashes) Array() []HasherArray {
 		{Type: "crc32_Castagnoli", Hash: h.CRC.CRC32Castagnoli},
 		{Type: "crc64_ISO", Hash: h.CRC.CRC64IOS},
 		{Type: "crc64_ECMA", Hash: h.CRC.CRC64ECMA},
+		{Type: "blake2b256", Hash: h.Blake.Blake2b256},
+		{Type: "blake2b384", Hash: h.Blake.Blake2b384},
+		{Type: "blake2b512", Hash: h.Blake.Blake2b512},
+		{Type: "blake2s256", Hash: h.Blake.Blake2s256},
+	}
+}
+
+func initializeHashers() ([]hash.Hash, *Hashes) {
+	hashes := &Hashes{}
+
+	hashers := []hash.Hash{
+		adler32.New(),
+		md4.New(),
+		md5.New(),
+		sha1.New(),
+		sha256.New224(),
+		sha256.New(),
+		sha512.New384(),
+		sha512.New(),
+		sha512.New512_224(),
+		sha512.New512_256(),
+		sha3.New256(),
+		sha3.New512(),
+		sha3.NewShake128(),
+		sha3.NewShake256(),
+		fnv.New32(),
+		fnv.New32a(),
+		fnv.New64(),
+		fnv.New64a(),
+		crc32.NewIEEE(),
+		crc32.New(crc32.MakeTable(crc32.Koopman)),
+		crc32.New(crc32.MakeTable(crc32.Castagnoli)),
+		crc64.New(crc64.MakeTable(crc64.ISO)),
+		crc64.New(crc64.MakeTable(crc64.ECMA)),
 	}
 
-	return hashes
+	blake2b256, _ := blake2b.New256(nil)
+	blake2b384, _ := blake2b.New384(nil)
+	blake2b512, _ := blake2b.New512(nil)
+	blake2s256, _ := blake2s.New256(nil)
+
+	hashers = append(hashers, blake2b256, blake2b384, blake2b512, blake2s256)
+
+	return hashers, hashes
+}
+
+func setHashes(hashes *Hashes, hashers []hash.Hash) {
+	hashes.Adler32 = fmt.Sprintf("%x", hashers[0].Sum(nil))
+	hashes.MD4 = fmt.Sprintf("%x", hashers[1].Sum(nil))
+	hashes.MD5 = fmt.Sprintf("%x", hashers[2].Sum(nil))
+	hashes.SHA1 = fmt.Sprintf("%x", hashers[3].Sum(nil))
+	hashes.SHA2.SHA224 = fmt.Sprintf("%x", hashers[4].Sum(nil))
+	hashes.SHA2.SHA256 = fmt.Sprintf("%x", hashers[5].Sum(nil))
+	hashes.SHA2.SHA384 = fmt.Sprintf("%x", hashers[6].Sum(nil))
+	hashes.SHA2.SHA512 = fmt.Sprintf("%x", hashers[7].Sum(nil))
+	hashes.SHA2.SHA512_224 = fmt.Sprintf("%x", hashers[8].Sum(nil))
+	hashes.SHA2.SHA512_256 = fmt.Sprintf("%x", hashers[9].Sum(nil))
+	hashes.SHA3.SHA256 = fmt.Sprintf("%x", hashers[10].Sum(nil))
+	hashes.SHA3.SHA512 = fmt.Sprintf("%x", hashers[11].Sum(nil))
+	hashes.SHA3.Shake128 = fmt.Sprintf("%x", hashers[12].Sum(nil))
+	hashes.SHA3.Shake256 = fmt.Sprintf("%x", hashers[13].Sum(nil))
+	hashes.FNV.FNV32 = fmt.Sprintf("%x", hashers[14].Sum(nil))
+	hashes.FNV.FNV32a = fmt.Sprintf("%x", hashers[15].Sum(nil))
+	hashes.FNV.FNV64 = fmt.Sprintf("%x", hashers[16].Sum(nil))
+	hashes.FNV.FNV64a = fmt.Sprintf("%x", hashers[17].Sum(nil))
+	hashes.CRC.CRC32IEEE = fmt.Sprintf("%x", hashers[18].Sum(nil))
+	hashes.CRC.CRC32Koopman = fmt.Sprintf("%x", hashers[19].Sum(nil))
+	hashes.CRC.CRC32Castagnoli = fmt.Sprintf("%x", hashers[20].Sum(nil))
+	hashes.CRC.CRC64IOS = fmt.Sprintf("%x", hashers[21].Sum(nil))
+	hashes.CRC.CRC64ECMA = fmt.Sprintf("%x", hashers[22].Sum(nil))
+	hashes.Blake.Blake2b256 = fmt.Sprintf("%x", hashers[23].Sum(nil))
+	hashes.Blake.Blake2b384 = fmt.Sprintf("%x", hashers[24].Sum(nil))
+	hashes.Blake.Blake2b512 = fmt.Sprintf("%x", hashers[25].Sum(nil))
+	hashes.Blake.Blake2s256 = fmt.Sprintf("%x", hashers[26].Sum(nil))
 }
 
 func HasherMulti(b []byte) (Hashes, error) {
-	// Adler
-	hasherAdler := adler32.New()
-
-	// MD4
-	hasherMD4 := md4.New()
-
-	// MD5
-	hasherMD5 := md5.New()
-
-	// SHA1
-	hasherSHA1 := sha1.New()
-
-	// SHA2
-	hasherSHA244 := sha256.New224()
-	hasherSHA256 := sha256.New()
-	hasherSHA384 := sha512.New384()
-	hasherSHA512 := sha512.New()
-	hasherSHA512_224 := sha512.New512_224()
-	hasherSHA512_256 := sha512.New512_256()
-
-	// SHA3
-	hasherSHA3_256 := sha3.New256()
-	hasherSHA3_512 := sha3.New512()
-	hasherSHA3_Shake128 := sha3.NewShake128()
-	hasherSHA3_Shake256 := sha3.NewShake256()
-
-	// FNV
-	hasherFnv32 := fnv.New32()
-	hasherFnv32a := fnv.New32a()
-	hasherFnv64 := fnv.New64()
-	hasherFnv64a := fnv.New64a()
-
-	// CRC
-	hasherCRC32IEEE := crc32.NewIEEE()
-	hasherCRC32Koopman := crc32.New(crc32.MakeTable(crc32.Koopman))
-	hasherCRC32Castagnoli := crc32.New(crc32.MakeTable(crc32.Castagnoli))
-	hasherCRC64ISO := crc64.New(crc64.MakeTable(crc64.ISO))
-	hasherCRC64ECMA := crc64.New(crc64.MakeTable(crc64.ECMA))
-
-	hashers := []io.Writer{
-		hasherAdler,
-		hasherMD4,
-		hasherMD5,
-		hasherSHA1,
-		hasherSHA244,
-		hasherSHA256,
-		hasherSHA384,
-		hasherSHA512,
-		hasherSHA512_224,
-		hasherSHA512_256,
-		hasherSHA3_256,
-		hasherSHA3_512,
-		hasherSHA3_Shake128,
-		hasherSHA3_Shake256,
-		hasherFnv32,
-		hasherFnv32a,
-		hasherFnv64,
-		hasherFnv64a,
-		hasherCRC32IEEE,
-		hasherCRC32Koopman,
-		hasherCRC32Castagnoli,
-		hasherCRC64ISO,
-		hasherCRC64ECMA,
-	}
-
-	multiWriter := io.MultiWriter(
-		hashers...,
-	)
+	hashers, hashes := initializeHashers()
+	multiWriter := io.MultiWriter(convertToWriters(hashers)...)
 
 	_, err := multiWriter.Write(b)
 	if err != nil {
 		return Hashes{}, err
 	}
 
-	hash := Hashes{
-		Adler32: fmt.Sprintf("%x", hasherAdler.Sum(nil)),
-		MD4:     fmt.Sprintf("%x", hasherMD4.Sum(nil)),
-		MD5:     fmt.Sprintf("%x", hasherMD5.Sum(nil)),
-		SHA1:    fmt.Sprintf("%x", hasherSHA1.Sum(nil)),
-		SHA2: SHA2{
-			SHA224:     fmt.Sprintf("%x", hasherSHA244.Sum(nil)),
-			SHA256:     fmt.Sprintf("%x", hasherSHA256.Sum(nil)),
-			SHA384:     fmt.Sprintf("%x", hasherSHA384.Sum(nil)),
-			SHA512:     fmt.Sprintf("%x", hasherSHA512.Sum(nil)),
-			SHA512_224: fmt.Sprintf("%x", hasherSHA512_224.Sum(nil)),
-			SHA512_256: fmt.Sprintf("%x", hasherSHA512_256.Sum(nil)),
-		},
-		SHA3: SHA3{
-			SHA256:   fmt.Sprintf("%x", hasherSHA3_256.Sum(nil)),
-			SHA512:   fmt.Sprintf("%x", hasherSHA3_512.Sum(nil)),
-			Shake128: fmt.Sprintf("%x", hasherSHA3_Shake128.Sum(nil)),
-			Shake256: fmt.Sprintf("%x", hasherSHA3_Shake256.Sum(nil)),
-		},
-		FNV: FNV{
-			FNV32:  fmt.Sprintf("%x", hasherFnv32.Sum(nil)),
-			FNV32a: fmt.Sprintf("%x", hasherFnv32a.Sum(nil)),
-			FNV64:  fmt.Sprintf("%x", hasherFnv64.Sum(nil)),
-			FNV64a: fmt.Sprintf("%x", hasherFnv64a.Sum(nil)),
-		},
-		CRC: CRC{
-			CRC32IEEE:       fmt.Sprintf("%x", hasherCRC32IEEE.Sum(nil)),
-			CRC32Koopman:    fmt.Sprintf("%x", hasherCRC32Koopman.Sum(nil)),
-			CRC32Castagnoli: fmt.Sprintf("%x", hasherCRC32Castagnoli.Sum(nil)),
-			CRC64IOS:        fmt.Sprintf("%x", hasherCRC64ISO.Sum(nil)),
-			CRC64ECMA:       fmt.Sprintf("%x", hasherCRC64ECMA.Sum(nil)),
-		},
-	}
-
-	return hash, nil
+	setHashes(hashes, hashers)
+	return *hashes, nil
 }
 
 func HasherMultiFile(path string) (Hashes, error) {
-	// Adler
-	hasherAdler := adler32.New()
-
-	// MD4
-	hasherMD4 := md4.New()
-
-	// MD5
-	hasherMD5 := md5.New()
-
-	// SHA1
-	hasherSHA1 := sha1.New()
-
-	// SHA2
-	hasherSHA244 := sha256.New224()
-	hasherSHA256 := sha256.New()
-	hasherSHA384 := sha512.New384()
-	hasherSHA512 := sha512.New()
-	hasherSHA512_224 := sha512.New512_224()
-	hasherSHA512_256 := sha512.New512_256()
-
-	// SHA3
-	hasherSHA3_256 := sha3.New256()
-	hasherSHA3_512 := sha3.New512()
-	hasherSHA3_Shake128 := sha3.NewShake128()
-	hasherSHA3_Shake256 := sha3.NewShake256()
-
-	// FNV
-	hasherFnv32 := fnv.New32()
-	hasherFnv32a := fnv.New32a()
-	hasherFnv64 := fnv.New64()
-	hasherFnv64a := fnv.New64a()
-
-	// CRC
-	hasherCRC32IEEE := crc32.NewIEEE()
-	hasherCRC32Koopman := crc32.New(crc32.MakeTable(crc32.Koopman))
-	hasherCRC32Castagnoli := crc32.New(crc32.MakeTable(crc32.Castagnoli))
-	hasherCRC64ISO := crc64.New(crc64.MakeTable(crc64.ISO))
-	hasherCRC64ECMA := crc64.New(crc64.MakeTable(crc64.ECMA))
-
-	hashers := []io.Writer{
-		hasherAdler,
-		hasherMD4,
-		hasherMD5,
-		hasherSHA1,
-		hasherSHA244,
-		hasherSHA256,
-		hasherSHA384,
-		hasherSHA512,
-		hasherSHA512_224,
-		hasherSHA512_256,
-		hasherSHA3_256,
-		hasherSHA3_512,
-		hasherSHA3_Shake128,
-		hasherSHA3_Shake256,
-		hasherFnv32,
-		hasherFnv32a,
-		hasherFnv64,
-		hasherFnv64a,
-		hasherCRC32IEEE,
-		hasherCRC32Koopman,
-		hasherCRC32Castagnoli,
-		hasherCRC64ISO,
-		hasherCRC64ECMA,
-	}
-
-	multiWriter := io.MultiWriter(
-		hashers...,
-	)
+	hashers, hashes := initializeHashers()
+	multiWriter := io.MultiWriter(convertToWriters(hashers)...)
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -287,40 +204,14 @@ func HasherMultiFile(path string) (Hashes, error) {
 		return Hashes{}, err
 	}
 
-	hash := Hashes{
-		Adler32: fmt.Sprintf("%x", hasherAdler.Sum(nil)),
-		MD4:     fmt.Sprintf("%x", hasherMD4.Sum(nil)),
-		MD5:     fmt.Sprintf("%x", hasherMD5.Sum(nil)),
-		SHA1:    fmt.Sprintf("%x", hasherSHA1.Sum(nil)),
-		SHA2: SHA2{
-			SHA224:     fmt.Sprintf("%x", hasherSHA244.Sum(nil)),
-			SHA256:     fmt.Sprintf("%x", hasherSHA256.Sum(nil)),
-			SHA384:     fmt.Sprintf("%x", hasherSHA384.Sum(nil)),
-			SHA512:     fmt.Sprintf("%x", hasherSHA512.Sum(nil)),
-			SHA512_224: fmt.Sprintf("%x", hasherSHA512_224.Sum(nil)),
-			SHA512_256: fmt.Sprintf("%x", hasherSHA512_256.Sum(nil)),
-		},
-		SHA3: SHA3{
-			SHA256:   fmt.Sprintf("%x", hasherSHA3_256.Sum(nil)),
-			SHA512:   fmt.Sprintf("%x", hasherSHA3_512.Sum(nil)),
-			Shake128: fmt.Sprintf("%x", hasherSHA3_Shake128.Sum(nil)),
-			Shake256: fmt.Sprintf("%x", hasherSHA3_Shake256.Sum(nil)),
-		},
-		FNV: FNV{
-			FNV32:  fmt.Sprintf("%x", hasherFnv32.Sum(nil)),
-			FNV32a: fmt.Sprintf("%x", hasherFnv32a.Sum(nil)),
-			FNV64:  fmt.Sprintf("%x", hasherFnv64.Sum(nil)),
-			FNV64a: fmt.Sprintf("%x", hasherFnv64a.Sum(nil)),
-		},
-		CRC: CRC{
-			CRC32IEEE:       fmt.Sprintf("%x", hasherCRC32IEEE.Sum(nil)),
-			CRC32Koopman:    fmt.Sprintf("%x", hasherCRC32Koopman.Sum(nil)),
-			CRC32Castagnoli: fmt.Sprintf("%x", hasherCRC32Castagnoli.Sum(nil)),
-			CRC64IOS:        fmt.Sprintf("%x", hasherCRC64ISO.Sum(nil)),
-			CRC64ECMA:       fmt.Sprintf("%x", hasherCRC64ECMA.Sum(nil)),
-		},
+	setHashes(hashes, hashers)
+	return *hashes, nil
+}
+
+func convertToWriters(hashers []hash.Hash) []io.Writer {
+	writers := make([]io.Writer, len(hashers))
+	for i, h := range hashers {
+		writers[i] = h
 	}
-
-	return hash, nil
-
+	return writers
 }
