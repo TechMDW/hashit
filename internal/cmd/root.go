@@ -14,6 +14,7 @@ var rootCmd = &cobra.Command{
 	Short:   "Hash a file using multiple hash functions",
 	Long:    `Hash a file using Adler, MD4, MD5, SHA1, SHA2, SHA3, FNV and CRC hash functions.`,
 	Run:     hashRun,
+	Args:    cobra.MaximumNArgs(2),
 }
 
 func hashRun(cmd *cobra.Command, args []string) {

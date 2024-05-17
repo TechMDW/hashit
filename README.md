@@ -1,13 +1,12 @@
 # Hashit - A CLI Tool for Hashing Files and Strings
 
-Hashit is a command-line tool that supports various hash functions for files and strings. It provides an easy way to compute hashes using algorithms like Adler-32, MD2, MD4, MD5, SHA-1, SHA-2, SHA-3, FNV, and CRC.
+Hashit is a command-line tool that supports various hash functions for files and strings. It provides an easy way to compute hashes using algorithms like Adler-32, MD4, MD5, SHA-1, SHA-2, SHA-3, FNV, and CRC.
 
 ## Features
 
 - Hash files and strings using multiple hash functions.
 - Supports the following hash algorithms:
   - Adler-32
-  - MD2
   - MD4
   - MD5
   - SHA-1
