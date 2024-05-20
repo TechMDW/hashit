@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -20,6 +21,8 @@ var rootCmd = &cobra.Command{
 func hashRun(cmd *cobra.Command, args []string) {
 	filePath, _ := cmd.Flags().GetString("file")
 	hashType, _ := cmd.Flags().GetString("type")
+	jsonOutput, _ := cmd.Flags().GetBool("json")
+
 	var isFile bool
 	if filePath != "" {
 		isFile = true
@@ -44,8 +47,16 @@ func hashRun(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		cmd.Println(hash.HexDigest)
-
+		if jsonOutput {
+			j, err := json.MarshalIndent(hash, "", "  ")
+			if err != nil {
+				cmd.PrintErr(err)
+				return
+			}
+			cmd.Println(string(j))
+		} else {
+			cmd.Println(hash.HexDigest)
+		}
 		return
 	}
 
@@ -61,8 +72,19 @@ func hashRun(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	for _, h := range hashes.Array() {
-		cmd.Printf("%s: %s\n", h.Type, h.Hash)
+	if jsonOutput {
+		j, err := json.MarshalIndent(hashes, "", "  ")
+		if err != nil {
+			cmd.PrintErr(err)
+			return
+		}
+
+		cmd.Println(string(j))
+		return
+	} else {
+		for _, h := range hashes.Array() {
+			cmd.Printf("%s: %s\n", h.Type, h.Hash)
+		}
 	}
 
 }
@@ -77,4 +99,5 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringP("file", "f", "", "File to hash")
 	rootCmd.Flags().StringP("type", "t", "", "Type of hash function to use")
+	rootCmd.Flags().BoolP("json", "j", false, "Output as JSON")
 }
