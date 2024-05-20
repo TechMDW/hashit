@@ -22,7 +22,7 @@ Hashit is a command-line tool that supports various hash functions for files and
 Use Go to install the package for you.
 
 ```sh
-go install github.com/TechMDW/hashit/cmd/hashit@latest
+go install github.com/TechMDW/hashit@latest
 ```
 
 ### Via github releases
@@ -36,7 +36,7 @@ Clone the repository and build the binary
 ```sh
 git clone https://github.com/TechMDW/hashit.git
 cd hashit
-go build -o hashit ./cmd/hashit/main.go
+go build -o hashit ./main.go
 ```
 
 **PS**: For windows you wanna add the correct extensions, for example `.exe`.

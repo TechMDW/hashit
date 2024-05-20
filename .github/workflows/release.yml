@@ -11,7 +11,6 @@ jobs:
 
     strategy:
       matrix:
-        project: [hashit]
         goos: [linux, darwin, windows]
         goarch: [386, amd64, arm, arm64]
         exclude:
@@ -33,7 +32,7 @@ jobs:
       - name: Build binary
         run: |
           mkdir -p bin
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/${{ matrix.project }}_${{ matrix.goos }}_${{ matrix.goarch }}$([[ ${{ matrix.goos }} == 'windows' ]] && echo .exe || echo '') ./cmd/${{ matrix.project }}/main.go
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/${{ matrix.goos }}_${{ matrix.goarch }}$([[ ${{ matrix.goos }} == 'windows' ]] && echo .exe || echo '') ./main.go
 
       - name: List files for debug
         run: ls -la bin
@@ -42,7 +41,7 @@ jobs:
         run: |
           mkdir -p release
           ls -la release
-          mv bin/${{ matrix.project }}_${{ matrix.goos }}_${{ matrix.goarch }}* release/
+          mv bin/${{ matrix.goos }}_${{ matrix.goarch }}* release/
           ls -la release
 
       - name: List release directory for debug
@@ -51,7 +50,7 @@ jobs:
       - name: Upload Release Assets
         uses: actions/upload-artifact@v4
         with:
-          name: release-assets-${{ matrix.project }}-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: release-assets-${{ matrix.goos }}-${{ matrix.goarch }}
           path: release/
 
   release:
@@ -84,7 +83,7 @@ jobs:
 
             # Extract project, goos, and goarch
             parts=(${base_name//_/ })
-            project=${parts[0]}
+            project=hashit
             goos=${parts[1]}
             goarch_with_ext=${parts[2]}
             goarch=${goarch_with_ext%%.*} # Remove the file extension
