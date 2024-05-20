@@ -37,23 +37,7 @@ func hashRun(cmd *cobra.Command, args []string) {
 		data = []byte(args[0])
 	}
 
-	if hashType == "" {
-		var hashes hash.Hashes
-		var err error
-		if isFile {
-			hashes, err = hash.HasherMultiFile(string(data))
-		} else {
-			hashes, err = hash.HasherMulti(data)
-		}
-		if err != nil {
-			cmd.PrintErr(err)
-			return
-		}
-
-		for _, h := range hashes.Array() {
-			cmd.Printf("%s: %s\n", h.Type, h.Hash)
-		}
-	} else {
+	if hashType != "" {
 		hash, err := hash.ComputeHash(data, hashType, isFile)
 		if err != nil {
 			cmd.PrintErr(err)
@@ -61,6 +45,24 @@ func hashRun(cmd *cobra.Command, args []string) {
 		}
 
 		cmd.Println(hash.HexDigest)
+
+		return
+	}
+
+	var hashes hash.Hashes
+	var err error
+	if isFile {
+		hashes, err = hash.HasherMultiFile(string(data))
+	} else {
+		hashes, err = hash.HasherMulti(data)
+	}
+	if err != nil {
+		cmd.PrintErr(err)
+		return
+	}
+
+	for _, h := range hashes.Array() {
+		cmd.Printf("%s: %s\n", h.Type, h.Hash)
 	}
 
 }
