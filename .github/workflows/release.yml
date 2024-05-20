@@ -32,7 +32,7 @@ jobs:
       - name: Build binary
         run: |
           mkdir -p bin
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/${{ matrix.goos }}_${{ matrix.goarch }}$([[ ${{ matrix.goos }} == 'windows' ]] && echo .exe || echo '') ./main.go
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/hashit_${{ matrix.goos }}_${{ matrix.goarch }}$([[ ${{ matrix.goos }} == 'windows' ]] && echo .exe || echo '') ./main.go
 
       - name: List files for debug
         run: ls -la bin
@@ -41,7 +41,7 @@ jobs:
         run: |
           mkdir -p release
           ls -la release
-          mv bin/${{ matrix.goos }}_${{ matrix.goarch }}* release/
+          mv bin/hashit_${{ matrix.goos }}_${{ matrix.goarch }}* release/
           ls -la release
 
       - name: List release directory for debug
@@ -81,9 +81,8 @@ jobs:
             base_name=$(basename "$file")
             echo "Compressing $base_name"
 
-            # Extract project, goos, and goarch
+            # Extract goos and goarch
             parts=(${base_name//_/ })
-            project=hashit
             goos=${parts[1]}
             goarch_with_ext=${parts[2]}
             goarch=${goarch_with_ext%%.*} # Remove the file extension
@@ -91,22 +90,22 @@ jobs:
             friendly_goos=${goos_map[$goos]}
             friendly_goarch=${goarch_map[$goarch]}
 
-            # Rename the file to project-specific name or project-specific name.exe
+            # Rename the file to hashit or hashit.exe
             if [[ $goos == "windows" ]]; then
-              mv "$file" release-assets/${project}.exe
-              file="release-assets/${project}.exe"
+              mv "$file" release-assets/hashit.exe
+              file="release-assets/hashit.exe"
             else
-              mv "$file" release-assets/${project}
-              file="release-assets/${project}"
+              mv "$file" release-assets/hashit
+              file="release-assets/hashit"
             fi
 
             # Use .zip for macOS and Windows, .tar.gz for Linux
             if [[ $goos == "windows" || $goos == "darwin" ]]; then
-              zip_filename="${project}-${version}-${friendly_goos}-${friendly_goarch}.zip"
+              zip_filename="hashit-${version}-${friendly_goos}-${friendly_goarch}.zip"
               zip release-compressed/${zip_filename} -j "$file"
             else
-              tar_filename="${project}-${version}-${friendly_goos}-${friendly_goarch}.tar.gz"
-              tar -czvf release-compressed/${tar_filename} -C release-assets ${project}
+              tar_filename="hashit-${version}-${friendly_goos}-${friendly_goarch}.tar.gz"
+              tar -czvf release-compressed/${tar_filename} -C release-assets hashit
             fi
           done
 
