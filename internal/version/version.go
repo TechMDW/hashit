@@ -1,7 +1,6 @@
 package version
 
 import (
-	"runtime"
 	"strings"
 )
 
@@ -20,8 +19,6 @@ func init() {
 		Version = Version[1:]
 	}
 
-	// Get the Go version
-	GoVersion = runtime.Version()
 	// Remove the leading "go" if it exists
 	GoVersion = strings.TrimLeft(GoVersion, "go")
 }
