@@ -32,7 +32,8 @@ jobs:
       - name: Build binary
         run: |
           mkdir -p bin
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/hashit_${{ matrix.goos }}_${{ matrix.goarch }}$([[ ${{ matrix.goos }} == 'windows' ]] && echo .exe || echo '') ./main.go
+          TAG=$(git describe --tags)
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/hashit_${{ matrix.goos }}_${{ matrix.goarch }}$([[ ${{ matrix.goos }} == 'windows' ]] && echo .exe || echo '') -ldflags "-X 'github.com/TechMDW/hashit/internal/version.Version=${{ github.ref_name }}'" ./main.go
 
       - name: List files for debug
         run: ls -la bin
