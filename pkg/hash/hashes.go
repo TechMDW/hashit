@@ -13,6 +13,7 @@ import (
 	"hash/fnv"
 	"io"
 	"os"
+	"time"
 
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/blake2s"
@@ -21,15 +22,17 @@ import (
 )
 
 type Hashes struct {
-	Adler32 string `json:"adler32"`
-	MD4     string `json:"md4"`
-	MD5     string `json:"md5"`
-	SHA1    string `json:"sha1"`
-	SHA2    SHA2   `json:"sha2"`
-	SHA3    SHA3   `json:"sha3"`
-	FNV     FNV    `json:"fnv"`
-	CRC     CRC    `json:"crc"`
-	Blake   Blake  `json:"blake"`
+	Adler32     string `json:"adler32"`
+	MD4         string `json:"md4"`
+	MD5         string `json:"md5"`
+	SHA1        string `json:"sha1"`
+	SHA2        SHA2   `json:"sha2"`
+	SHA3        SHA3   `json:"sha3"`
+	FNV         FNV    `json:"fnv"`
+	CRC         CRC    `json:"crc"`
+	Blake       Blake  `json:"blake"`
+	Duration    int64  `json:"duration"`
+	DurationStr string `json:"durationStr"`
 }
 
 type SHA2 struct {
@@ -177,6 +180,7 @@ func setHashes(hashes *Hashes, hashers []hash.Hash) {
 }
 
 func HasherMulti(b []byte) (Hashes, error) {
+	timeStart := time.Now()
 	hashers, hashes := initializeHashers()
 	multiWriter := io.MultiWriter(convertToWriters(hashers)...)
 
@@ -186,10 +190,14 @@ func HasherMulti(b []byte) (Hashes, error) {
 	}
 
 	setHashes(hashes, hashers)
+	timeSince := time.Since(timeStart)
+	hashes.Duration = timeSince.Milliseconds()
+	hashes.DurationStr = timeSince.String()
 	return *hashes, nil
 }
 
 func HasherMultiFile(path string) (Hashes, error) {
+	timeStart := time.Now()
 	hashers, hashes := initializeHashers()
 	multiWriter := io.MultiWriter(convertToWriters(hashers)...)
 
@@ -205,6 +213,9 @@ func HasherMultiFile(path string) (Hashes, error) {
 	}
 
 	setHashes(hashes, hashers)
+	timeSince := time.Since(timeStart)
+	hashes.Duration = timeSince.Milliseconds()
+	hashes.DurationStr = timeSince.String()
 	return *hashes, nil
 }
 

@@ -27,33 +27,36 @@ const (
 
 // GenericHash represents a hash of data.
 type GenericHash struct {
-	Input     []byte
-	HashBytes []byte
-	HexDigest string
-	Duration  time.Duration
+	Input       []byte `json:"input"`
+	HashBytes   []byte `json:"hashBytes"`
+	HexDigest   string `json:"hexDigest"`
+	Duration    int64  `json:"duration"`
+	DurationStr string `json:"durationStr"`
 }
 
 // Hash returns a hash of the data using the specified hash type.
 func Hash(data []byte, hash hash.Hash) *GenericHash {
-	start := time.Now()
+	timeStart := time.Now()
 
-	sha := &GenericHash{
+	gh := &GenericHash{
 		Input: data,
 	}
 
 	hash.Write(data)
-	sha.HashBytes = hash.Sum(nil)
-	sha.HexDigest = fmt.Sprintf("%x", sha.HashBytes)
-	sha.Duration = time.Since(start)
+	gh.HashBytes = hash.Sum(nil)
+	gh.HexDigest = fmt.Sprintf("%x", gh.HashBytes)
+	timeSince := time.Since(timeStart)
+	gh.Duration = timeSince.Milliseconds()
+	gh.DurationStr = timeSince.String()
 
-	return sha
+	return gh
 }
 
 // HashFile returns a hash of the file using the specified hash type.
 func HashFile(path string, hash hash.Hash) (*GenericHash, error) {
-	start := time.Now()
+	timeStart := time.Now()
 
-	sha := &GenericHash{
+	gh := &GenericHash{
 		Input: []byte(path),
 	}
 
@@ -75,11 +78,13 @@ func HashFile(path string, hash hash.Hash) (*GenericHash, error) {
 		hash.Write(buf[:n])
 	}
 
-	sha.HashBytes = hash.Sum(nil)
-	sha.HexDigest = fmt.Sprintf("%x", sha.HashBytes)
-	sha.Duration = time.Since(start)
+	gh.HashBytes = hash.Sum(nil)
+	gh.HexDigest = fmt.Sprintf("%x", gh.HashBytes)
+	timeSince := time.Since(timeStart)
+	gh.Duration = timeSince.Milliseconds()
+	gh.DurationStr = timeSince.String()
 
-	return sha, nil
+	return gh, nil
 }
 
 // ComputeHash returns a hash of the data using the specified hash type.
