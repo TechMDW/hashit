@@ -13,6 +13,7 @@ import (
 	"hash/fnv"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/blake2b"
@@ -182,12 +183,27 @@ func setHashes(hashes *Hashes, hashers []hash.Hash) {
 func HasherMulti(b []byte) (Hashes, error) {
 	timeStart := time.Now()
 	hashers, hashes := initializeHashers()
-	multiWriter := io.MultiWriter(convertToWriters(hashers)...)
 
-	_, err := multiWriter.Write(b)
-	if err != nil {
-		return Hashes{}, err
+	var wg sync.WaitGroup
+	chunkSize := BufferSize
+
+	for i := 0; i < len(b); i += chunkSize {
+		end := i + chunkSize
+		if end > len(b) {
+			end = len(b)
+		}
+
+		chunk := b[i:end]
+		for _, hasher := range hashers {
+			wg.Add(1)
+			go func(h hash.Hash, d []byte) {
+				defer wg.Done()
+				h.Write(d)
+			}(hasher, chunk)
+		}
 	}
+
+	wg.Wait()
 
 	setHashes(hashes, hashers)
 	timeSince := time.Since(timeStart)
@@ -199,7 +215,6 @@ func HasherMulti(b []byte) (Hashes, error) {
 func HasherMultiFile(path string) (Hashes, error) {
 	timeStart := time.Now()
 	hashers, hashes := initializeHashers()
-	multiWriter := io.MultiWriter(convertToWriters(hashers)...)
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -207,9 +222,30 @@ func HasherMultiFile(path string) (Hashes, error) {
 	}
 	defer file.Close()
 
-	_, err = io.Copy(multiWriter, file)
-	if err != nil {
-		return Hashes{}, err
+	var wg sync.WaitGroup
+	buf := make([]byte, BufferSize)
+
+	for {
+		n, err := file.Read(buf)
+		if err != nil && err != io.EOF {
+			return Hashes{}, err
+		}
+		if n == 0 {
+			break
+		}
+
+		chunk := make([]byte, n)
+		copy(chunk, buf[:n])
+
+		for _, hasher := range hashers {
+			wg.Add(1)
+			go func(h hash.Hash, d []byte) {
+				defer wg.Done()
+				h.Write(d)
+			}(hasher, chunk)
+		}
+
+		wg.Wait()
 	}
 
 	setHashes(hashes, hashers)
@@ -217,12 +253,4 @@ func HasherMultiFile(path string) (Hashes, error) {
 	hashes.Duration = timeSince.Milliseconds()
 	hashes.DurationStr = timeSince.String()
 	return *hashes, nil
-}
-
-func convertToWriters(hashers []hash.Hash) []io.Writer {
-	writers := make([]io.Writer, len(hashers))
-	for i, h := range hashers {
-		writers[i] = h
-	}
-	return writers
 }

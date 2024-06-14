@@ -17,12 +17,13 @@ import (
 	"time"
 
 	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/blake2s"
 	"golang.org/x/crypto/md4"
 	"golang.org/x/crypto/sha3"
 )
 
 const (
-	BufferSize = 4096 // BufferSize is the size of the buffer used for reading files.
+	BufferSize = 1024 * 1024 * 4
 )
 
 // GenericHash represents a hash of data.
@@ -146,7 +147,7 @@ func ComputeHash(data []byte, hashType string, file bool) (*GenericHash, error) 
 	case "blake2b512":
 		hasher, _ = blake2b.New512(nil)
 	case "blake2s256":
-		hasher, _ = blake2b.New256(nil)
+		hasher, _ = blake2s.New256(nil)
 	default:
 		return &GenericHash{}, fmt.Errorf("unknown hash type: %s", hashType)
 	}

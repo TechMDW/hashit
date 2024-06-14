@@ -33,6 +33,10 @@ var expectedHashesMap = map[string]string{
 	"crc32_castagnoli": "3379b4ca",
 	"crc64_iso":        "8dff641309b87c72",
 	"crc64_ecma":       "8d49d818fdb071a5",
+	"blake2b256":       "eab94977a17791d0c089fe9e393261b3ab667cf0e8456632a842d905c468cf65",
+	"blake2b384":       "ecae9bd3d6f47401518d7eb565b7c23d0f64521db101de6d3c3b0e459cd40efd7735717e558d0d8e4ddf8056c8047d6f",
+	"blake2b512":       "21bae505e9cd790bd374e387886738653270888d2b6e0753a1d6ff29b56a30491a7531ae2ec30a75b7446f5e16acb504f8cad64b51e6b6c6f8894368748a3f6b",
+	"blake2s256":       "14414cc07b916d3b83d03e2419cede3b533e450a0207b40454f60079aaac5e2d",
 }
 
 func TestHash(t *testing.T) {
@@ -78,10 +82,11 @@ func TestHashFile(t *testing.T) {
 
 func TestComputeHashAvailable(t *testing.T) {
 	expectedHashes := []string{
-		"adler32", "md2", "md4", "md5", "sha1", "sha224", "sha256", "sha384",
+		"adler32", "md4", "md5", "sha1", "sha224", "sha256", "sha384",
 		"sha512", "sha512_224", "sha512_256", "sha3_256", "sha3_512",
 		"shake128", "shake256", "fnv32", "fnv32a", "fnv64", "fnv64a",
 		"crc32_ieee", "crc32_koopman", "crc32_castagnoli", "crc64_iso", "crc64_ecma",
+		"blake2b256", "blake2b384", "blake2b512", "blake2s256",
 	}
 
 	availableHashes := ComputeHashList()
