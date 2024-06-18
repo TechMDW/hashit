@@ -34,7 +34,7 @@ jobs:
           mkdir -p bin
           GOVERSION=$(go version | awk '{print $3}')
           VERSION=${GITHUB_REF#refs/tags/v}
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/hashit_${{ matrix.goos }}_${{ matrix.goarch }}$([[ ${{ matrix.goos }} == 'windows' ]] && echo .exe || echo '') -ldflags "-X 'github.com/TechMDW/hashit/internal/version.Version=$VERSION' -X 'github.com/TechMDW/hashit/internal/version.GoBuildVersion=$GOVERSION'" ./main.go
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/hashit_${{ matrix.goos }}_${{ matrix.goarch }}$([[ ${{ matrix.goos }} == 'windows' ]] && echo .exe || echo '') ./main.go
 
       - name: List files for debug
         run: ls -la bin
